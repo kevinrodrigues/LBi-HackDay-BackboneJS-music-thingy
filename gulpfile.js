@@ -31,7 +31,7 @@ function bundle() {
 }
 
 var bundler = watchify(browserify(watchify.args));
-bundler.add('./src/main.js');
+bundler.add('./js/main.js');
 bundler.on('update', bundle);
 bundler.on('log', gutil.log);
 

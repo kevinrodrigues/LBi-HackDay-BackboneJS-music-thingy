@@ -1,0 +1,26 @@
+{
+  "name": "lbi-hackday-backboneJS-sound-mixer",
+  "version": "1.0.0",
+  "main": "./js/main.js",
+  "browser": {
+    "dispatcher": "./js/core/dispatcher.js",
+    "audiocontext": "./js/common/audiocontext.js"
+  },
+  "devDependencies": {
+    "browserify": "latest",
+    "gulp": "^3.9.1",
+    "gulp-sourcemaps": "latest",
+    "gulp-util": "latest",
+    "handlebars": "latest",
+    "hbsfy": "latest",
+    "vinyl-buffer": "latest",
+    "vinyl-source-stream": "latest",
+    "watchify": "latest"
+  },
+  "dependencies": {
+    "backbone": "latest",
+    "gulp-install": "^0.6.0",
+    "jquery": "latest",
+    "underscore": "latest"
+  }
+}

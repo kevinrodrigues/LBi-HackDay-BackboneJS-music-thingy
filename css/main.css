@@ -10,74 +10,6 @@ h1 {
 	margin-bottom: 20px;
 }
 
-.module {
-	border: 1px solid #151515;
-	margin: 10px 0;
-	padding: 25px 10px 10px 10px;
-	box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
-	position: relative;
-	text-align: center;
-}
-
-.module h3 {
-	margin: 0;
-	padding: 2px;
-	font-size: 10px;
-	color: #555;
-	position: absolute;
-	top: 0;
-	right: 0;
-	left: 0;
-	text-transform: uppercase;
-	text-align: left;
-	background: -webkit-linear-gradient(#333, #222);
-	background: linear-gradient(#333, #222);
-}
-.module button {
-	appearance: none;
-	border: none;
-}
-.module button:focus {
-	outline: none;
-	border-color: #99ccaa;
-}
-
-/** Transport **/
-.transport button {
-	background: #222;
-	width: 40px;
-	border: 2px solid #333;
-	border-radius: 5px;
-	color: #888;
-}
-.transport button:hover {
-	background-color: #530;
-	border-color: #ff9900;
-	box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
-	color: #fff;
-}
-.transport button.active {
-	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
-	color: #fff;
-}
-.transport button.transport-play {
-	color: #22ff55;
-}
-.transport button.transport-stop {
-	color: #ff2255;
-}
-
-.transport-tempo {
-	width: 40px;
-	background: #222;
-	box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
-	padding: 2px;
-	appearance: none;
-	border: 1px solid #111;
-	color: #22ff55;
-	text-shadow: 0 0 10px #22ff55;
-	text-align: center;
-}
 
 .seq-row {
 	font-size: 0;
@@ -92,8 +24,8 @@ h1 {
 .seq-row span {
 	display: inline-block;
 	margin: 1px;
-	width: 15px;
-	height: 30px;
+	width: 30px;
+	height: 150px;
 	border: 2px solid #222;
 	border-radius: 5px;
 	cursor: pointer;
@@ -112,22 +44,10 @@ h1 {
 }
 
 .channel {
+	width: 100%;
 	display: inline-block;
 	white-space: nowrap;
 	vertical-align: middle;
 	border: 1px solid #111;
 	padding: 5px 10px;
-}
-
-.filterfx input {
-	vertical-align: middle;
-}
-.filterfx .slider-toggle {
-	margin-right: 20px;
-}
-.filterfx .slider-freq {
-	margin-right: 10px;
-}
-.filterfx .slider-q, .filterfx .slider-freq {
-	width: 80px;
 }
