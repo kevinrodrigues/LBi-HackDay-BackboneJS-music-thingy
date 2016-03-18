@@ -1,6 +1,3 @@
-/**
- * Created by kevrodri on 17/03/16.
- */
 var dispatcher = require('dispatcher');
 
 var TransportView = require('./view');

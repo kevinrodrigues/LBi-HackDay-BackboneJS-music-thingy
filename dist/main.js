@@ -15,21 +15,15 @@ module.exports = AUDIO;
 var dispatcher = require('dispatcher'),
 	SampleBank = require('../modules/samplebank'),
 	Transport = require('../modules/transport'),
-	PatternGrid = require('../modules/patterngrid'),
-	KeyControls = require('../modules/controls');
+	PatternGrid = require('../modules/patterngrid');
 
 var patterns = {
 	basic: {
-		'soundOne': '0000000000000000',
-		'soundTwo': '0000000000000000',
-		'soundThree': '0000100000001000',
-		'soundFour': '1000000010000000'
-	},
-	empty: {
-		'soundOne': '0000000000000000',
-		'soundTwo': '0000000000000000',
-		'soundThree': '0000000000000000',
-		'soundFour': '0000000000000000'
+		'soundOne': '00000000000000000000',
+		'soundTwo': '00000000000000000000',
+		'soundThree':'00000000000000000000',
+		'soundFour': '00000000000000000000',
+		'soundFive': '00000000000000000000'
 	}
 };
 
@@ -49,32 +43,17 @@ function proxyEvents(eventsHash) {
 	}
 }
 
-
-/**
- * Application startup code
- **/
 function launchApp() {
 	proxyEvents({
 		'patterngrid:notehit': 'samplebank:playsample',
 		'transport:requestplay': 'patterngrid:play'
 	});
-
-	dispatcher.on('keycontrols:keypressed', function(key) {
-		switch (key) {
-			case 'PAUSE_RESUME':
-				dispatcher.trigger('patterngrid:toggleplay');
-			default:
-				break;
-		}
-	});
-
 	Transport.init({
 		el: document.getElementById('top')
 	});
 	PatternGrid.init({
 		el: document.getElementById('middle')
 	});
-	KeyControls.init();
 
 	dispatcher.trigger('patterngrid:setpattern', patterns.basic);
 
@@ -83,30 +62,27 @@ function launchApp() {
 
 var App = {
 	init: function() {
-		document.addEventListener('visibilitychange', function(e) {
-			if (document.hidden) dispatcher.trigger('patterngrid:stop');
-		}, false);
-
 		dispatcher.on('samplebank:ready', launchApp);
 
 		var sampleSrcs = {
-			'kick': 'assets/samples/kick.wav',
-			'snare': 'assets/samples/snare.wav',
-			'openHat': 'assets/samples/openHat.wav',
-			'closedHat': 'assets/samples/closedHat.wav'
+			'soundOne': 'assets/samples/kick.mp3',
+			'soundTwo': 'assets/samples/percussion.mp3',
+			'soundThree': 'assets/samples/kick.mp3',
+			'soundFour': 'assets/samples/percussion.mp3',
+			'soundFive': 'assets/samples/percussion2.mp3'
 		};
 		SampleBank.init(sampleSrcs);
 	}
 };
 
 module.exports = App;
-},{"../modules/controls":5,"../modules/patterngrid":7,"../modules/samplebank":12,"../modules/transport":13,"dispatcher":3}],3:[function(require,module,exports){
+},{"../modules/patterngrid":6,"../modules/samplebank":11,"../modules/transport":12,"dispatcher":3}],3:[function(require,module,exports){
 var Backbone = require('backbone'),
 	_ = require('underscore'),
 	dispatcher = _.extend({}, Backbone.Events);
 
 module.exports = dispatcher;
-},{"backbone":16,"underscore":38}],4:[function(require,module,exports){
+},{"backbone":15,"underscore":37}],4:[function(require,module,exports){
 var Backbone = require('backbone'),
 	$ = require('jquery');
 Backbone.$ = $;
@@ -114,38 +90,7 @@ Backbone.$ = $;
 var app = require('./core/app');
 
 app.init();
-},{"./core/app":2,"backbone":16,"jquery":37}],5:[function(require,module,exports){
-/**
- * Created by kevrodri on 17/03/16.
- */
-var $ = require('jquery'),
-	_ = require('underscore');
-
-var dispatcher = require('dispatcher');
-
-var KEYS = {
-	'PAUSE_RESUME': 32,
-	'CLEAR': 27,
-	'TOGGLE_FILTER': 70
-};
-
-function testKeyEvent(e) {
-	var key = _.invert(KEYS)[e.which];
-	if (key) {
-		dispatcher.trigger('keycontrols:keypressed', key);
-	}
-}
-
-function init() {
-	$(window).on('keyup', testKeyEvent);
-}
-
-var KeyControls = {
-	init: init
-};
-
-module.exports = KeyControls;
-},{"dispatcher":3,"jquery":37,"underscore":38}],6:[function(require,module,exports){
+},{"./core/app":2,"backbone":15,"jquery":36}],5:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"1":function(container,depth0,helpers,partials,data) {
@@ -162,55 +107,18 @@ module.exports = HandlebarsCompiler.template({"1":function(container,depth0,help
     + "</div>";
 },"useData":true});
 
-},{"hbsfy/runtime":36}],7:[function(require,module,exports){
-// Application dependencies
-var dispatcher = require('dispatcher');
+},{"hbsfy/runtime":35}],6:[function(require,module,exports){
+var dispatcher = require('dispatcher'),
+	scheduler = require('./scheduler'),
+	PatternGridView = require('./view.patterngrid.js');
 
-// Inner dependencies
-var scheduler = require('./scheduler'),
-    PatternGridView = require('./view.patterngrid.js');
-
-
-/**
- * ------------------------------------------------------
- * PatternGrid
- * Handles all pattern creation and sequencing, and
- * provides a grid view for manipulating pattern data.
- *
- * Inbound events:
- *  - patterngrid:setpattern (pattern)
- *      Loads pattern data into the grid
- *  - patterngrid:play
- *      Triggers playback of current pattern
- *  - patterngrid:stop
-        Stops playback
- *  - patterngrid:toggleplay
- *      Starts/stops playback
- *  - patterngrid:settempo (newTempo)
- *      Changes the playback tempo
- *
- * Outbound events:
- *  - patterngrid:stepchanged (stepID)
- *      Fired when scheduler advances to next 16th
- *  - patterngrid:notehit (channelID, delay)
- *      Fired when scheduler hits an 'on' note
- * ------------------------------------------------------
- **/
-
-
-/**
- * Module init.
- * Sets up the view for this module and binds inbound events
- * to the schedule system.  Also sets the scheduler tempo.
- *
- * @param options: View.initialize() options
- **/
 function init(options) {
     console.log('PatternGrid init');
+
     new PatternGridView(options).render();
+
     scheduler.setTempo(130);
     dispatcher.on('patterngrid:play', scheduler.playPattern);
-    dispatcher.on('patterngrid:toggleplay', scheduler.togglePlay);
     dispatcher.on('patterngrid:settempo', scheduler.setTempo);
 }
 
@@ -223,7 +131,7 @@ var PatternGrid = {
 }
 
 module.exports = PatternGrid;
-},{"./scheduler":9,"./view.patterngrid.js":11,"dispatcher":3}],8:[function(require,module,exports){
+},{"./scheduler":8,"./view.patterngrid.js":10,"dispatcher":3}],7:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"1":function(container,depth0,helpers,partials,data) {
@@ -238,13 +146,13 @@ module.exports = HandlebarsCompiler.template({"1":function(container,depth0,help
     + "	</div>\n</div>";
 },"useData":true});
 
-},{"hbsfy/runtime":36}],9:[function(require,module,exports){
+},{"hbsfy/runtime":35}],8:[function(require,module,exports){
 // Library dependencies
 var dispatcher = require('dispatcher'),
     _ = require('underscore');
 
 // Application dependencies
-var AUDIO = require('../../common/audiocontext');
+var AUDIO = require('audiocontext');
 
 
 /**
@@ -256,14 +164,19 @@ var AUDIO = require('../../common/audiocontext');
  **/
 
 
-var tempo, tic, _initialized = false;
-var noteTime, startTime, ti, currentStep = 0;
-var isPlaying = false;
-var currentPattern = null;
+var tempo,
+	tic,
+	_initialized = false,
+	noteTime,
+	startTime,
+	ti,
+	currentStep = 0,
+	isPlaying = false,
+	currentPattern = null;
 
 
 /**
- * Convert a pattern object to an array of '0' and '1' 
+ * Convert a pattern object to an array of '0' and '1'
  * values and store it in the scheduler for later use.
  *
  * @paran pattern: object of drum ID and pattern values
@@ -337,29 +250,10 @@ function play() {
 
 
 /**
- * Stops playing.
- **/
-function stop() {
-    isPlaying = false;
-    currentStep = 0;
-    dispatcher.trigger('patterngrid:stepchanged', currentStep);
-}
-
-
-/**
- * Toggles playing on or off depending on current state.
- **/
-function togglePlay() {
-    var fn = (isPlaying) ? stop : play;
-    fn();
-}
-
-
-/**
  * Calculates the precise time of the next
  * note in the sequence and triggers it. This
- * method loops constantly once triggered - think 
- * of it as like a requestAnimationFrame() for 
+ * method loops constantly once triggered - think
+ * of it as like a requestAnimationFrame() for
  * note scheduling.
  **/
 function scheduleNote() {
@@ -381,7 +275,7 @@ function scheduleNote() {
 **/
 function nextNote() {
     currentStep++;
-    if (currentStep == 16) currentStep = 0;
+    if (currentStep == 25) currentStep = 0;
     noteTime += tic;
 }
 
@@ -397,13 +291,11 @@ var api = {
     parsePattern: parsePattern,
     getCurrentPattern: getCurrentPattern,
     play: play,
-    togglePlay: togglePlay,
-    stop: stop,
     setTempo: setTempo
 };
 
 module.exports = api;
-},{"../../common/audiocontext":1,"dispatcher":3,"underscore":38}],10:[function(require,module,exports){
+},{"audiocontext":1,"dispatcher":3,"underscore":37}],9:[function(require,module,exports){
 // Library dependencies
 var Backbone = require('backbone'),
     $ = require('jquery');
@@ -459,7 +351,7 @@ var ChannelView = Backbone.View.extend({
 });
 
 module.exports = ChannelView;
-},{"./channel.hbs":6,"./scheduler":9,"backbone":16,"jquery":37}],11:[function(require,module,exports){
+},{"./channel.hbs":5,"./scheduler":8,"backbone":15,"jquery":36}],10:[function(require,module,exports){
 // Library dependencies
 var Backbone = require('backbone'),
     $ = require('jquery');
@@ -540,30 +432,10 @@ var PatternGridView = Backbone.View.extend({
 });
 
 module.exports = PatternGridView;
-},{"./patterngrid.hbs":8,"./scheduler":9,"./view.channel.js":10,"backbone":16,"dispatcher":3,"jquery":37}],12:[function(require,module,exports){
+},{"./patterngrid.hbs":7,"./scheduler":8,"./view.channel.js":9,"backbone":15,"dispatcher":3,"jquery":36}],11:[function(require,module,exports){
 // Application dependencies
 var dispatcher = require('dispatcher'),
     AUDIO = require('audiocontext');
-
-
-/**
- * ------------------------------------------------------
- * SampleBank
- * Handles the loading, triggering and output of the
- * drum samples in our app.
- *
- * Inbound events:
- *  - samplebank:playsample (sampleId, when)
- *      Plays a sample with an optional delay
- *  - samplebank:setfxnode (Node)
- *      Inlines a Node in the chain, clears it if null
- *
- * Outbound events:
- *  - samplebank:ready
- *      Fires when all samples loaded
- * ------------------------------------------------------
- **/
-
 
 var bank = {},
     fxNode = null;
@@ -571,13 +443,6 @@ var bank = {},
 var loadCount = 0,
     totalCount = 0;
 
-
-/**
- * Triggers a load on every item in an object of
- * sample sources.
- *
- * @param srcObj: object of id:srcpath pairs
- **/
 function loadSamples(srcObj) {
     for (var k in srcObj) {
         totalCount++;
@@ -587,14 +452,6 @@ function loadSamples(srcObj) {
     }
 }
 
-
-/**
- * Loads a sample via XHR and triggers a 'ready' event if
- * it's the last one to load.
- *
- * @param key: string ID to store sample as
- * @param url: string path of sample source
- **/
 function _loadSample(key, url) {
     var req = new XMLHttpRequest();
     req.responseType = "arraybuffer";
@@ -611,15 +468,6 @@ function _loadSample(key, url) {
 }
 
 
-/**
- * Triggers a sample to play by creating a new source node
- * and wiring it (via an FX node, if present) to the
- * browser's audio output.  Source nodes are not reusable
- * and will be GC'd by the browser.
- *
- * @param id: string ID of sample to play
- * @param when: int time (ms) after creation to play sound
- **/
 function playSample(id, when) {
     var s = AUDIO.createBufferSource();
     s.buffer = bank[id];
@@ -632,24 +480,10 @@ function playSample(id, when) {
     s.start(when || 0);
 }
 
-
-/**
- * Stores a reference to a node that we will inline, if
- * present, when playing sounds via playSample().
- *
- * @param node: Node instance, or null
- **/
 function setFxNode(node) {
     fxNode = node;
 }
 
-
-/**
- * Module init.
- * Binds inbound events and begins sample loading.
- *
- * @param srcObj: see loadSamples()
- **/
 function init(srcObj) {
     console.log('SampleBank init');
     dispatcher.on('samplebank:playsample', playSample);
@@ -657,19 +491,12 @@ function init(srcObj) {
     loadSamples(srcObj);
 }
 
-
-/**
- * Exported module interface
- **/
 var SampleBank = {
     init: init
 };
 
 module.exports = SampleBank;
-},{"audiocontext":1,"dispatcher":3}],13:[function(require,module,exports){
-/**
- * Created by kevrodri on 17/03/16.
- */
+},{"audiocontext":1,"dispatcher":3}],12:[function(require,module,exports){
 var dispatcher = require('dispatcher');
 
 var TransportView = require('./view');
@@ -684,23 +511,21 @@ var Transport = {
 };
 
 module.exports = Transport;
-},{"./view":15,"dispatcher":3}],14:[function(require,module,exports){
+},{"./view":14,"dispatcher":3}],13:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
-    return "<div class=\"module transport\">\n	<button class=\"transport-play\" title=\"Play\">&#9658;</button>\n</div>";
+    return "<div class=\"module transport\">\n	<button class=\"transport-play\" title=\"Play\">Compose</button>\n</div>";
 },"useData":true});
 
-},{"hbsfy/runtime":36}],15:[function(require,module,exports){
+},{"hbsfy/runtime":35}],14:[function(require,module,exports){
 /**
  * Created by kevrodri on 17/03/16.
  */
 var Backbone = require('backbone'),
-	$ = require('jquery');
-
-var dispatcher = require('dispatcher');
-
-var _template = require('./transport.hbs');
+	$ = require('jquery'),
+	dispatcher = require('dispatcher'),
+	_template = require('./transport.hbs');
 
 var TransportView = Backbone.View.extend({
 	events: {
@@ -708,6 +533,7 @@ var TransportView = Backbone.View.extend({
 	},
 	render: function() {
 		var rawHTML = _template();
+
 		this.$el.html(rawHTML);
 		return this;
 	},
@@ -717,7 +543,7 @@ var TransportView = Backbone.View.extend({
 });
 
 module.exports = TransportView;
-},{"./transport.hbs":14,"backbone":16,"dispatcher":3,"jquery":37}],16:[function(require,module,exports){
+},{"./transport.hbs":13,"backbone":15,"dispatcher":3,"jquery":36}],15:[function(require,module,exports){
 (function (global){
 //     Backbone.js 1.3.2
 
@@ -2641,7 +2467,7 @@ module.exports = TransportView;
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"jquery":37,"underscore":38}],17:[function(require,module,exports){
+},{"jquery":36,"underscore":37}],16:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -2709,7 +2535,7 @@ exports['default'] = inst;
 module.exports = exports['default'];
 
 
-},{"./handlebars/base":18,"./handlebars/exception":21,"./handlebars/no-conflict":31,"./handlebars/runtime":32,"./handlebars/safe-string":33,"./handlebars/utils":34}],18:[function(require,module,exports){
+},{"./handlebars/base":17,"./handlebars/exception":20,"./handlebars/no-conflict":30,"./handlebars/runtime":31,"./handlebars/safe-string":32,"./handlebars/utils":33}],17:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -2815,7 +2641,7 @@ exports.createFrame = _utils.createFrame;
 exports.logger = _logger2['default'];
 
 
-},{"./decorators":19,"./exception":21,"./helpers":22,"./logger":30,"./utils":34}],19:[function(require,module,exports){
+},{"./decorators":18,"./exception":20,"./helpers":21,"./logger":29,"./utils":33}],18:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -2833,7 +2659,7 @@ function registerDefaultDecorators(instance) {
 }
 
 
-},{"./decorators/inline":20}],20:[function(require,module,exports){
+},{"./decorators/inline":19}],19:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -2864,7 +2690,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{"../utils":34}],21:[function(require,module,exports){
+},{"../utils":33}],20:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -2906,7 +2732,7 @@ exports['default'] = Exception;
 module.exports = exports['default'];
 
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -2954,7 +2780,7 @@ function registerDefaultHelpers(instance) {
 }
 
 
-},{"./helpers/block-helper-missing":23,"./helpers/each":24,"./helpers/helper-missing":25,"./helpers/if":26,"./helpers/log":27,"./helpers/lookup":28,"./helpers/with":29}],23:[function(require,module,exports){
+},{"./helpers/block-helper-missing":22,"./helpers/each":23,"./helpers/helper-missing":24,"./helpers/if":25,"./helpers/log":26,"./helpers/lookup":27,"./helpers/with":28}],22:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -2995,7 +2821,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{"../utils":34}],24:[function(require,module,exports){
+},{"../utils":33}],23:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3091,7 +2917,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{"../exception":21,"../utils":34}],25:[function(require,module,exports){
+},{"../exception":20,"../utils":33}],24:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3118,7 +2944,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{"../exception":21}],26:[function(require,module,exports){
+},{"../exception":20}],25:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3149,7 +2975,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{"../utils":34}],27:[function(require,module,exports){
+},{"../utils":33}],26:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3177,7 +3003,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3191,7 +3017,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3226,7 +3052,7 @@ exports['default'] = function (instance) {
 module.exports = exports['default'];
 
 
-},{"../utils":34}],30:[function(require,module,exports){
+},{"../utils":33}],29:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3275,7 +3101,7 @@ exports['default'] = logger;
 module.exports = exports['default'];
 
 
-},{"./utils":34}],31:[function(require,module,exports){
+},{"./utils":33}],30:[function(require,module,exports){
 (function (global){
 /* global window */
 'use strict';
@@ -3299,7 +3125,7 @@ module.exports = exports['default'];
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],32:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3593,7 +3419,7 @@ function executeDecorators(fn, prog, container, depths, data, blockParams) {
 }
 
 
-},{"./base":18,"./exception":21,"./utils":34}],33:[function(require,module,exports){
+},{"./base":17,"./exception":20,"./utils":33}],32:[function(require,module,exports){
 // Build out our basic SafeString type
 'use strict';
 
@@ -3610,7 +3436,7 @@ exports['default'] = SafeString;
 module.exports = exports['default'];
 
 
-},{}],34:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3736,15 +3562,15 @@ function appendContextPath(contextPath, id) {
 }
 
 
-},{}],35:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 // Create a simple path alias to allow browserify to resolve
 // the runtime on a supported path.
 module.exports = require('./dist/cjs/handlebars.runtime')['default'];
 
-},{"./dist/cjs/handlebars.runtime":17}],36:[function(require,module,exports){
+},{"./dist/cjs/handlebars.runtime":16}],35:[function(require,module,exports){
 module.exports = require("handlebars/runtime")["default"];
 
-},{"handlebars/runtime":35}],37:[function(require,module,exports){
+},{"handlebars/runtime":34}],36:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.1
  * http://jquery.com/
@@ -13577,7 +13403,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],38:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors

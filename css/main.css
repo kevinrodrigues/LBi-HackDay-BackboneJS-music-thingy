@@ -1,15 +1,14 @@
 body {
 	background: grey;
-	color: #666;
-	font-family: monospace;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 h1 {
 	font-size: 11px;
-	color: #666;
+	text-align: center;
+	color: white;
 	margin-bottom: 20px;
 }
-
 
 .seq-row {
 	font-size: 0;
@@ -21,23 +20,28 @@ h1 {
 	vertical-align: middle;
 	margin-left: 1em;
 }
+
 .seq-row span {
 	display: inline-block;
 	margin: 1px;
-	width: 30px;
-	height: 150px;
-	border: 2px solid #222;
-	border-radius: 5px;
+	width: 40%;
+	height: 120px;
+	border: 1px solid white;
 	cursor: pointer;
+	top:0;
+	position: relative;
+	background-color: orange;
 }
 
 .seq-row span.seq-note {
-	border-color: #565;
+	background: blue;
 }
 
 .seq-row span.seq-playhead {
-	border-color: #2255ff;
-	box-shadow: 0 0 30px #2255ff;
+	transition-property: all;
+	transition: all 1s ease-in-out;
+	top: 1000px;
+	background-color: red;
 }
 .seq-row span:hover {
 	border-color: #ff9900;

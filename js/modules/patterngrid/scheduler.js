@@ -3,7 +3,7 @@ var dispatcher = require('dispatcher'),
     _ = require('underscore');
 
 // Application dependencies
-var AUDIO = require('../../common/audiocontext');
+var AUDIO = require('audiocontext');
 
 
 /**
@@ -15,14 +15,19 @@ var AUDIO = require('../../common/audiocontext');
  **/
 
 
-var tempo, tic, _initialized = false;
-var noteTime, startTime, ti, currentStep = 0;
-var isPlaying = false;
-var currentPattern = null;
+var tempo,
+	tic,
+	_initialized = false,
+	noteTime,
+	startTime,
+	ti,
+	currentStep = 0,
+	isPlaying = false,
+	currentPattern = null;
 
 
 /**
- * Convert a pattern object to an array of '0' and '1' 
+ * Convert a pattern object to an array of '0' and '1'
  * values and store it in the scheduler for later use.
  *
  * @paran pattern: object of drum ID and pattern values
@@ -96,29 +101,10 @@ function play() {
 
 
 /**
- * Stops playing.
- **/
-function stop() {
-    isPlaying = false;
-    currentStep = 0;
-    dispatcher.trigger('patterngrid:stepchanged', currentStep);
-}
-
-
-/**
- * Toggles playing on or off depending on current state.
- **/
-function togglePlay() {
-    var fn = (isPlaying) ? stop : play;
-    fn();
-}
-
-
-/**
  * Calculates the precise time of the next
  * note in the sequence and triggers it. This
- * method loops constantly once triggered - think 
- * of it as like a requestAnimationFrame() for 
+ * method loops constantly once triggered - think
+ * of it as like a requestAnimationFrame() for
  * note scheduling.
  **/
 function scheduleNote() {
@@ -140,7 +126,7 @@ function scheduleNote() {
 **/
 function nextNote() {
     currentStep++;
-    if (currentStep == 16) currentStep = 0;
+    if (currentStep == 25) currentStep = 0;
     noteTime += tic;
 }
 
@@ -156,8 +142,6 @@ var api = {
     parsePattern: parsePattern,
     getCurrentPattern: getCurrentPattern,
     play: play,
-    togglePlay: togglePlay,
-    stop: stop,
     setTempo: setTempo
 };
 
